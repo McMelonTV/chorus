@@ -78,6 +78,9 @@ const (
 	TOKEN_COMMA         // ,
 	TOKEN_DOT           // .
 	TOKEN_AT            // @
+	TOKEN_ARROW_RIGHT   // ->
+	TOKEN_ARROW_LEFT    // <-
+	TOKEN_ARROW_BI      // <->
 
 	// Logic
 	TOKEN_LOGICAL_AND // &&
@@ -89,40 +92,81 @@ const (
 	TOKEN_NONE_COALESCE  // ??
 	TOKEN_NONE_CONDITION // :?
 
-	// Control Flow
-	TOKEN_IF     // if
-	TOKEN_ELSE   // else
-	TOKEN_FOR    // for
-	TOKEN_RETURN // return
-
-	// Literals
-	TOKEN_TRUE  // true
-	TOKEN_FALSE // false
-	TOKEN_NONE  // none
-
-	// Qualifiers
-	TOKEN_CONST  // const
-	TOKEN_STABLE // stable
-	TOKEN_EMBED  // embed
-	TOKEN_STATIC // static
-
 	// Reference
 	TOKEN_POUND // #
-	TOKEN_SELF  // self
-	TOKEN_THIS  // this
-	TOKEN_NEW   // new
-
-	// Keywords
-	TOKEN_CLASS     // class
-	TOKEN_INTERFACE // interface
-	TOKEN_CONTAINS  // contains
-	TOKEN_SATISFIES // satisfies
 
 	// Non-static
 	TOKEN_IDENTIFIER    // Token.Value
 	TOKEN_VALUE_STRING  // Token.Value
 	TOKEN_VALUE_NUMERIC // Token.Value
-
-	// Type tokens?
-	TOKEN_MAP // map
 )
+
+var tokenLiterals = map[TokenKind]string{
+	// Arithmetic
+	TOKEN_PLUS:     "+",
+	TOKEN_MINUS:    "-",
+	TOKEN_MULTIPLY: "*",
+	TOKEN_DIVIDE:   "/",
+	TOKEN_MODULO:   "%",
+
+	// Assignment
+	TOKEN_DECLARE_ASSIGN:  ":=",
+	TOKEN_ASSIGN:          "=",
+	TOKEN_PLUS_ASSIGN:     "+=",
+	TOKEN_MINUS_ASSIGN:    "-=",
+	TOKEN_MULTIPLY_ASSIGN: "*=",
+	TOKEN_DIVIDE_ASSIGN:   "/=",
+	TOKEN_MODULO_ASSIGN:   "%=",
+
+	// Bitwise operations
+	TOKEN_BITWISE_AND: "&",
+	TOKEN_BITWISE_OR:  "|",
+	TOKEN_BITWISE_XOR: "^",
+	TOKEN_BITWISE_NOT: "~",
+
+	TOKEN_BITWISE_SHIFT_LEFT:  "<<",
+	TOKEN_BITWISE_SHIFT_RIGHT: ">>",
+
+	TOKEN_BITWISE_AND_ASSIGN: "&=",
+	TOKEN_BITWISE_OR_ASSIGN:  "|=",
+	TOKEN_BITWISE_XOR_ASSIGN: "^=",
+	TOKEN_BITWISE_NOT_ASSIGN: "~=",
+
+	// Comparison
+	TOKEN_EQUALS:         "==",
+	TOKEN_NOT_EQUALS:     "!=",
+	TOKEN_GREATER_EQUALS: ">=",
+	TOKEN_LESS_EQUALS:    "<=",
+
+	TOKEN_CHEVRON_LEFT:  "<",
+	TOKEN_CHEVRON_RIGHT: ">",
+
+	// Delimiters
+	TOKEN_PAREN_OPEN:    "(",
+	TOKEN_PAREN_CLOSE:   ")",
+	TOKEN_BRACE_OPEN:    "{",
+	TOKEN_BRACE_CLOSE:   "}",
+	TOKEN_BRACKET_OPEN:  "[",
+	TOKEN_BRACKET_CLOSE: "]",
+	TOKEN_SEMICOLON:     ";",
+	TOKEN_COLON:         ":",
+	TOKEN_COMMA:         ",",
+	TOKEN_DOT:           ".",
+	TOKEN_AT:            "@",
+	TOKEN_ARROW_RIGHT:   "->",
+	TOKEN_ARROW_LEFT:    "<-",
+	TOKEN_ARROW_BI:      "<->",
+
+	// Logic
+	TOKEN_LOGICAL_AND: "&&",
+	TOKEN_LOGICAL_OR:  "||",
+
+	// Optional
+	TOKEN_QUESTION:       "?",
+	TOKEN_BANG:           "!",
+	TOKEN_NONE_COALESCE:  "??",
+	TOKEN_NONE_CONDITION: ":?",
+
+	// Reference
+	TOKEN_POUND: "#",
+}
