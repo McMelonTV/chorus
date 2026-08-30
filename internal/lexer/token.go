@@ -97,6 +97,7 @@ const (
 	// Non-static
 	TOKEN_IDENTIFIER    // Token.Value
 	TOKEN_VALUE_STRING  // Token.Value
+	TOKEN_VALUE_RUNE    // Token.Value
 	TOKEN_VALUE_NUMERIC // Token.Value
 )
 
