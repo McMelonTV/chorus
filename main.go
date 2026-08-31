@@ -2,13 +2,39 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path"
+
+	"github.com/mcmelontv/chorus/internal/lexer"
 )
 
 func main() {
-	s := "gopher"
-	fmt.Println("Hello and welcome, %s!", s)
-
-	for i := 1; i <= 5; i++ {
-		fmt.Println("i =", 100/i)
+	if len(os.Args) < 2 {
+		fmt.Printf("no path provided")
+		return
 	}
+
+	fileName := os.Args[1]
+	filePath := path.Clean(fileName)
+
+	if _, err := os.Stat(filePath); err != nil {
+		fmt.Printf("failed to read file info: %s", err)
+		return
+	}
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Printf("failed to open file: %s", err)
+	}
+	defer file.Close()
+
+	tokens, err := lexer.Lex(file)
+	if err != nil {
+		fmt.Printf("failed to lex file: %s", err)
+	}
+
+	for _, token := range tokens {
+		fmt.Print(token.String(), " ")
+	}
+	fmt.Println()
 }

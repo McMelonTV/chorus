@@ -1,9 +1,61 @@
 package lexer
 
-import "fmt"
+import (
+	"fmt"
+)
+
+type literalNode struct {
+	children map[rune]*literalNode
+
+	kind     TokenKind
+	terminal bool
+}
+
+var literalRoot = &literalNode{
+	children: make(map[rune]*literalNode),
+}
+
+var (
+	tokenLiterals map[TokenKind]string
+	literalTokens map[string]TokenKind
+)
+
+func init() {
+	tokenLiterals = make(map[TokenKind]string)
+	literalTokens = make(map[string]TokenKind)
+
+	for _, token := range literalTokenList {
+		tokenLiterals[token.kind] = token.literal
+		literalTokens[token.literal] = token.kind
+	}
+
+	for _, lt := range literalTokenList {
+		node := literalRoot
+
+		for _, r := range lt.literal {
+			child := node.children[r]
+
+			if child == nil {
+				child = &literalNode{
+					children: make(map[rune]*literalNode),
+				}
+				node.children[r] = child
+			}
+
+			node = child
+		}
+
+		if node.terminal {
+			panic("duplicate literal token")
+		}
+
+		node.kind = lt.kind
+		node.terminal = true
+	}
+}
 
 type FilePos struct {
-	Line, Column int
+	Offset, Line, Column int
 }
 
 type Span struct {
@@ -18,6 +70,25 @@ type Token struct {
 
 func (t *Token) String() string {
 	return fmt.Sprintf("%s(%s)", t.Kind, t.Value)
+}
+
+func unexpectedToken(start, end FilePos) Token {
+	return newToken(TOKEN_UNEXPECTED, "", start, end)
+}
+
+func eofToken(pos FilePos) Token {
+	return newToken(TOKEN_EOF, "", pos, pos)
+}
+
+func newToken(kind TokenKind, value string, start, end FilePos) Token {
+	return Token{
+		Kind:  kind,
+		Value: value,
+		Span: Span{
+			Start: start,
+			End:   end,
+		},
+	}
 }
 
 type TokenKind int
@@ -101,140 +172,76 @@ const (
 	TOKEN_VALUE_NUMERIC // Token.Value
 )
 
-var tokenLiterals = map[TokenKind]string{
-	// Arithmetic
-	TOKEN_PLUS:     "+",
-	TOKEN_MINUS:    "-",
-	TOKEN_MULTIPLY: "*",
-	TOKEN_DIVIDE:   "/",
-	TOKEN_MODULO:   "%",
-
-	// Assignment
-	TOKEN_DECLARE_ASSIGN:  ":=",
-	TOKEN_ASSIGN:          "=",
-	TOKEN_PLUS_ASSIGN:     "+=",
-	TOKEN_MINUS_ASSIGN:    "-=",
-	TOKEN_MULTIPLY_ASSIGN: "*=",
-	TOKEN_DIVIDE_ASSIGN:   "/=",
-	TOKEN_MODULO_ASSIGN:   "%=",
-
-	// Bitwise operations
-	TOKEN_BITWISE_AND: "&",
-	TOKEN_BITWISE_OR:  "|",
-	TOKEN_BITWISE_XOR: "^",
-	TOKEN_BITWISE_NOT: "~",
-
-	TOKEN_BITWISE_SHIFT_LEFT:  "<<",
-	TOKEN_BITWISE_SHIFT_RIGHT: ">>",
-
-	TOKEN_BITWISE_AND_ASSIGN: "&=",
-	TOKEN_BITWISE_OR_ASSIGN:  "|=",
-	TOKEN_BITWISE_XOR_ASSIGN: "^=",
-
-	// Comparison
-	TOKEN_EQUALS:         "==",
-	TOKEN_NOT_EQUALS:     "!=",
-	TOKEN_GREATER_EQUALS: ">=",
-	TOKEN_LESS_EQUALS:    "<=",
-
-	TOKEN_CHEVRON_LEFT:  "<",
-	TOKEN_CHEVRON_RIGHT: ">",
-
-	// Delimiters
-	TOKEN_PAREN_OPEN:    "(",
-	TOKEN_PAREN_CLOSE:   ")",
-	TOKEN_BRACE_OPEN:    "{",
-	TOKEN_BRACE_CLOSE:   "}",
-	TOKEN_BRACKET_OPEN:  "[",
-	TOKEN_BRACKET_CLOSE: "]",
-	TOKEN_SEMICOLON:     ";",
-	TOKEN_COLON:         ":",
-	TOKEN_COMMA:         ",",
-	TOKEN_DOT:           ".",
-	TOKEN_AT:            "@",
-	TOKEN_ARROW_RIGHT:   "->",
-	TOKEN_ARROW_LEFT:    "<-",
-	TOKEN_ARROW_BI:      "<->",
-
-	// Logic
-	TOKEN_LOGICAL_AND: "&&",
-	TOKEN_LOGICAL_OR:  "||",
-
-	// Optional
-	TOKEN_QUESTION:       "?",
-	TOKEN_BANG:           "!",
-	TOKEN_NONE_COALESCE:  "??",
-	TOKEN_NONE_CONDITION: ":?",
-
-	// Reference
-	TOKEN_POUND: "#",
+type literalToken struct {
+	kind    TokenKind
+	literal string
 }
 
-var literalTokens = map[string]TokenKind{
+var literalTokenList = []literalToken{
 	// Arithmetic
-	"+": TOKEN_PLUS,
-	"-": TOKEN_MINUS,
-	"*": TOKEN_MULTIPLY,
-	"/": TOKEN_DIVIDE,
-	"%": TOKEN_MODULO,
+	{TOKEN_PLUS, "+"},
+	{TOKEN_MINUS, "-"},
+	{TOKEN_MULTIPLY, "*"},
+	{TOKEN_DIVIDE, "/"},
+	{TOKEN_MODULO, "%"},
 
 	// Assignment
-	":=": TOKEN_DECLARE_ASSIGN,
-	"=":  TOKEN_ASSIGN,
-	"+=": TOKEN_PLUS_ASSIGN,
-	"-=": TOKEN_MINUS_ASSIGN,
-	"*=": TOKEN_MULTIPLY_ASSIGN,
-	"/=": TOKEN_DIVIDE_ASSIGN,
-	"%=": TOKEN_MODULO_ASSIGN,
+	{TOKEN_DECLARE_ASSIGN, ":="},
+	{TOKEN_ASSIGN, "="},
+	{TOKEN_PLUS_ASSIGN, "+="},
+	{TOKEN_MINUS_ASSIGN, "-="},
+	{TOKEN_MULTIPLY_ASSIGN, "*="},
+	{TOKEN_DIVIDE_ASSIGN, "/="},
+	{TOKEN_MODULO_ASSIGN, "%="},
 
 	// Bitwise operations
-	"&": TOKEN_BITWISE_AND,
-	"|": TOKEN_BITWISE_OR,
-	"^": TOKEN_BITWISE_XOR,
-	"~": TOKEN_BITWISE_NOT,
+	{TOKEN_BITWISE_AND, "&"},
+	{TOKEN_BITWISE_OR, "|"},
+	{TOKEN_BITWISE_XOR, "^"},
+	{TOKEN_BITWISE_NOT, "~"},
 
-	"<<": TOKEN_BITWISE_SHIFT_LEFT,
-	">>": TOKEN_BITWISE_SHIFT_RIGHT,
+	{TOKEN_BITWISE_SHIFT_LEFT, "<<"},
+	{TOKEN_BITWISE_SHIFT_RIGHT, ">>"},
 
-	"&=": TOKEN_BITWISE_AND_ASSIGN,
-	"|=": TOKEN_BITWISE_OR_ASSIGN,
-	"^=": TOKEN_BITWISE_XOR_ASSIGN,
+	{TOKEN_BITWISE_AND_ASSIGN, "&="},
+	{TOKEN_BITWISE_OR_ASSIGN, "|="},
+	{TOKEN_BITWISE_XOR_ASSIGN, "^="},
 
 	// Comparison
-	"==": TOKEN_EQUALS,
-	"!=": TOKEN_NOT_EQUALS,
-	">=": TOKEN_GREATER_EQUALS,
-	"<=": TOKEN_LESS_EQUALS,
+	{TOKEN_EQUALS, "=="},
+	{TOKEN_NOT_EQUALS, "!="},
+	{TOKEN_GREATER_EQUALS, ">="},
+	{TOKEN_LESS_EQUALS, "<="},
 
-	"<": TOKEN_CHEVRON_LEFT,
-	">": TOKEN_CHEVRON_RIGHT,
+	{TOKEN_CHEVRON_LEFT, "<"},
+	{TOKEN_CHEVRON_RIGHT, ">"},
 
 	// Delimiters
-	"(":   TOKEN_PAREN_OPEN,
-	")":   TOKEN_PAREN_CLOSE,
-	"{":   TOKEN_BRACE_OPEN,
-	"}":   TOKEN_BRACE_CLOSE,
-	"[":   TOKEN_BRACKET_OPEN,
-	"]":   TOKEN_BRACKET_CLOSE,
-	";":   TOKEN_SEMICOLON,
-	":":   TOKEN_COLON,
-	",":   TOKEN_COMMA,
-	".":   TOKEN_DOT,
-	"@":   TOKEN_AT,
-	"->":  TOKEN_ARROW_RIGHT,
-	"<-":  TOKEN_ARROW_LEFT,
-	"<->": TOKEN_ARROW_BI,
+	{TOKEN_PAREN_OPEN, "("},
+	{TOKEN_PAREN_CLOSE, ")"},
+	{TOKEN_BRACE_OPEN, "{"},
+	{TOKEN_BRACE_CLOSE, "}"},
+	{TOKEN_BRACKET_OPEN, "["},
+	{TOKEN_BRACKET_CLOSE, "]"},
+	{TOKEN_SEMICOLON, ";"},
+	{TOKEN_COLON, ":"},
+	{TOKEN_COMMA, ","},
+	{TOKEN_DOT, "."},
+	{TOKEN_AT, "@"},
+	{TOKEN_ARROW_RIGHT, "->"},
+	{TOKEN_ARROW_LEFT, "<-"},
+	{TOKEN_ARROW_BI, "<->"},
 
 	// Logic
-	"&&": TOKEN_LOGICAL_AND,
-	"||": TOKEN_LOGICAL_OR,
+	{TOKEN_LOGICAL_AND, "&&"},
+	{TOKEN_LOGICAL_OR, "||"},
 
 	// Optional
-	"?":  TOKEN_QUESTION,
-	"!":  TOKEN_BANG,
-	"??": TOKEN_NONE_COALESCE,
-	":?": TOKEN_NONE_CONDITION,
+	{TOKEN_QUESTION, "?"},
+	{TOKEN_BANG, "!"},
+	{TOKEN_NONE_COALESCE, "??"},
+	{TOKEN_NONE_CONDITION, ":?"},
 
 	// Reference
-	"#": TOKEN_POUND,
+	{TOKEN_POUND, "#"},
 }
