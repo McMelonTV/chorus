@@ -66,7 +66,7 @@ func (l *Lexer) consumeComment() (bool, error) {
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					return true, &Error{
-						token.Span: token.Span{
+						Span: token.Span{
 							Start: start,
 							End:   l.pos,
 						},
@@ -84,7 +84,7 @@ func (l *Lexer) consumeComment() (bool, error) {
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					return true, &Error{
-						token.Span: token.Span{
+						Span: token.Span{
 							Start: start,
 							End:   l.pos,
 						},

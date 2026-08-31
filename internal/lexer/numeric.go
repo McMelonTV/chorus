@@ -43,7 +43,7 @@ func (l *Lexer) lexNumeric() (token.Token, error) {
 	}
 	runes = append(runes, exponent...)
 
-	return token.newToken(token.TOKEN_VALUE_NUMERIC, string(runes), start, l.pos), nil
+	return token.NewToken(token.TOKEN_VALUE_NUMERIC, string(runes), start, l.pos), nil
 }
 
 func (l *Lexer) readNumericDecimalPoint() (*rune, error) {

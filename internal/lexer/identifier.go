@@ -38,10 +38,10 @@ func (l *Lexer) lexIdentifier() (token.Token, error) {
 
 	if !isValidIdentifier(runes) {
 		return token.Token{}, &Error{
-			token.Span: token.Span{Start: start, End: l.pos},
-			Message:    "invalid identifier",
+			Span:    token.Span{Start: start, End: l.pos},
+			Message: "invalid identifier",
 		}
 	}
 
-	return token.newToken(token.TOKEN_IDENTIFIER, string(runes), start, l.pos), nil
+	return token.NewToken(token.TOKEN_IDENTIFIER, string(runes), start, l.pos), nil
 }

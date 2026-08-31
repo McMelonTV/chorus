@@ -5,14 +5,14 @@ import (
 )
 
 type literalNode struct {
-	children map[rune]*literalNode
+	Children map[rune]*literalNode
 
-	kind     TokenKind
-	terminal bool
+	Kind     TokenKind
+	Terminal bool
 }
 
-var literalRoot = &literalNode{
-	children: make(map[rune]*literalNode),
+var LiteralRoot = &literalNode{
+	Children: make(map[rune]*literalNode),
 }
 
 var (
@@ -30,27 +30,27 @@ func init() {
 	}
 
 	for _, lt := range literalTokenList {
-		node := literalRoot
+		node := LiteralRoot
 
 		for _, r := range lt.literal {
-			child := node.children[r]
+			child := node.Children[r]
 
 			if child == nil {
 				child = &literalNode{
-					children: make(map[rune]*literalNode),
+					Children: make(map[rune]*literalNode),
 				}
-				node.children[r] = child
+				node.Children[r] = child
 			}
 
 			node = child
 		}
 
-		if node.terminal {
+		if node.Terminal {
 			panic("duplicate literal token")
 		}
 
-		node.kind = lt.kind
-		node.terminal = true
+		node.Kind = lt.kind
+		node.Terminal = true
 	}
 }
 
@@ -72,15 +72,26 @@ func (t *Token) String() string {
 	return fmt.Sprintf("%s(%s)", t.Kind, t.Value)
 }
 
-func unexpectedToken(start, end FilePos) Token {
-	return newToken(TOKEN_UNEXPECTED, "", start, end)
+func UnexpectedToken(start, end FilePos) Token {
+	return NewTokenWithoutValue(TOKEN_UNEXPECTED, start, end)
 }
 
-func eofToken(pos FilePos) Token {
-	return newToken(TOKEN_EOF, "", pos, pos)
+func EofToken(pos FilePos) Token {
+	return NewTokenWithoutValue(TOKEN_EOF, pos, pos)
 }
 
-func newToken(kind TokenKind, value string, start, end FilePos) Token {
+func NewTokenWithoutValue(kind TokenKind, start, end FilePos) Token {
+	return Token{
+		Kind:  kind,
+		Value: "",
+		Span: Span{
+			Start: start,
+			End:   end,
+		},
+	}
+}
+
+func NewToken(kind TokenKind, value string, start, end FilePos) Token {
 	return Token{
 		Kind:  kind,
 		Value: value,

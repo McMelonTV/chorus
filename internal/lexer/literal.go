@@ -8,14 +8,14 @@ import (
 )
 
 func isLiteralTokenStart(r rune) bool {
-	_, ok := token.literalRoot.children[r]
+	_, ok := token.LiteralRoot.Children[r]
 	return ok
 }
 
 func (l *Lexer) lexLiteral() (token.Token, error) {
 	start := l.pos
 
-	node := token.literalRoot
+	node := token.LiteralRoot
 
 	traversed := 0
 	matchedRunes := 0
@@ -30,7 +30,7 @@ func (l *Lexer) lexLiteral() (token.Token, error) {
 			return token.Token{}, err
 		}
 
-		next := node.children[br.r]
+		next := node.Children[br.r]
 		if next == nil {
 			break
 		}
@@ -38,9 +38,9 @@ func (l *Lexer) lexLiteral() (token.Token, error) {
 		node = next
 		traversed++
 
-		if node.terminal {
+		if node.Terminal {
 			matchedRunes = traversed
-			matchedKind = node.kind
+			matchedKind = node.Kind
 		}
 	}
 
@@ -49,8 +49,8 @@ func (l *Lexer) lexLiteral() (token.Token, error) {
 			return token.Token{}, err
 		}
 		return token.Token{}, &Error{
-			token.Span: token.Span{Start: start, End: l.pos},
-			Message:    "invalid token",
+			Span:    token.Span{Start: start, End: l.pos},
+			Message: "invalid token",
 		}
 	}
 
@@ -58,5 +58,5 @@ func (l *Lexer) lexLiteral() (token.Token, error) {
 		return token.Token{}, err
 	}
 
-	return token.newToken(matchedKind, "", start, l.pos), nil
+	return token.NewToken(matchedKind, "", start, l.pos), nil
 }

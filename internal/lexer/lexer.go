@@ -34,14 +34,14 @@ func (l *Lexer) Lex() ([]token.Token, error) {
 	var tokens []token.Token
 
 	for {
-		token, err := l.Next()
+		t, err := l.Next()
 		if err != nil {
 			return nil, err
 		}
 
-		tokens = append(tokens, token)
+		tokens = append(tokens, t)
 
-		if token.Kind == token.TOKEN_EOF {
+		if t.Kind == token.TOKEN_EOF {
 			return tokens, nil
 		}
 	}
@@ -71,7 +71,7 @@ func (l *Lexer) Next() (token.Token, error) {
 
 	switch lk {
 	case lexKindEOF:
-		return token.eofToken(l.pos), nil
+		return token.EofToken(l.pos), nil
 	case lexKindIdentifier:
 		return l.lexIdentifier()
 	case lexKindNumeric:
@@ -91,8 +91,8 @@ func (l *Lexer) Next() (token.Token, error) {
 		}
 
 		return token.Token{}, &Error{
-			token.Span: token.Span{Start: start, End: l.pos},
-			Message:    fmt.Sprintf("unexpected character %q", br.r),
+			Span:    token.Span{Start: start, End: l.pos},
+			Message: fmt.Sprintf("unexpected character %q", br.r),
 		}
 	}
 }
