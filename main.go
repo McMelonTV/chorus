@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/mcmelontv/chorus/internal/lexer"
+	"github.com/mcmelontv/chorus/internal/token"
 )
 
 func main() {
@@ -23,15 +24,15 @@ func main() {
 
 	l := lexer.New(file)
 	for {
-		token, err := l.Next()
+		t, err := l.Next()
 		if err != nil {
 			fmt.Printf("failed to lex next token: %s", err)
 			break
 		}
 
-		fmt.Print(token.String(), " ")
+		fmt.Print(t.String(), " ")
 
-		if token.Kind == token.TOKEN_EOF {
+		if t.Kind == token.TOKEN_EOF {
 			break
 		}
 	}
