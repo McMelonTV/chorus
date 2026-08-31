@@ -25,12 +25,14 @@ func main() {
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Printf("failed to open file: %s", err)
+		return
 	}
 	defer file.Close()
 
 	tokens, err := lexer.Lex(file)
 	if err != nil {
 		fmt.Printf("failed to lex file: %s", err)
+		return
 	}
 
 	for _, token := range tokens {
