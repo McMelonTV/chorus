@@ -13,10 +13,6 @@ func isValidIdentifier(runes []rune) bool {
 		return false
 	}
 
-	if len(runes) > 1 && runes[0] == '_' {
-		return false
-	}
-
 	if !isIdentifierStart(runes[0]) {
 		return false
 	}
