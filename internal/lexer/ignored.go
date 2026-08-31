@@ -3,6 +3,8 @@ package lexer
 import (
 	"errors"
 	"io"
+
+	"github.com/mcmelontv/chorus/internal/token"
 )
 
 func isWhitespace(r rune) bool {
@@ -64,7 +66,7 @@ func (l *Lexer) consumeComment() (bool, error) {
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					return true, &Error{
-						Span: Span{
+						token.Span: token.Span{
 							Start: start,
 							End:   l.pos,
 						},
@@ -82,7 +84,7 @@ func (l *Lexer) consumeComment() (bool, error) {
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					return true, &Error{
-						Span: Span{
+						token.Span: token.Span{
 							Start: start,
 							End:   l.pos,
 						},

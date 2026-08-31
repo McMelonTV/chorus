@@ -31,7 +31,7 @@ func main() {
 
 		fmt.Print(token.String(), " ")
 
-		if token.Kind == lexer.TOKEN_EOF {
+		if token.Kind == token.TOKEN_EOF {
 			break
 		}
 	}

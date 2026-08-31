@@ -1,9 +1,13 @@
 package lexer
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/mcmelontv/chorus/internal/token"
+)
 
 type Error struct {
-	Span    Span
+	Span    token.Span
 	Message string
 }
 

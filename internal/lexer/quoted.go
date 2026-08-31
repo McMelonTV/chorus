@@ -5,18 +5,20 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/mcmelontv/chorus/internal/token"
 )
 
-func (l *Lexer) lexString() (Token, error) {
+func (l *Lexer) lexString() (token.Token, error) {
 	start := l.pos
 
 	br, err := l.advance()
 	if err != nil {
-		return Token{}, err
+		return token.Token{}, err
 	}
 
 	if br.r != '"' {
-		return unexpectedToken(start, start), nil
+		return token.unexpectedToken(start, start), nil
 	}
 
 	var b strings.Builder
@@ -27,29 +29,29 @@ func (l *Lexer) lexString() (Token, error) {
 		br, err = l.advance()
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				return Token{}, &Error{
-					Span:    Span{Start: start, End: l.pos},
-					Message: "unterminated string",
+				return token.Token{}, &Error{
+					token.Span: token.Span{Start: start, End: l.pos},
+					Message:    "unterminated string",
 				}
 			}
-			return Token{}, err
+			return token.Token{}, err
 		}
 
 		switch br.r {
 		case '"':
-			return newToken(TOKEN_VALUE_STRING, b.String(), start, l.pos), nil
+			return token.newToken(token.TOKEN_VALUE_STRING, b.String(), start, l.pos), nil
 		case '\\':
 			r, err := l.readEscape(runeStart, '"')
 			if err != nil {
-				return Token{}, err
+				return token.Token{}, err
 			}
 
 			b.WriteRune(r)
 		case '\n', '\r':
 			// TODO: remove this if we wanna allow multiline strings
-			return Token{}, &Error{
-				Span:    Span{Start: runeStart, End: l.pos},
-				Message: "newline in string literal",
+			return token.Token{}, &Error{
+				token.Span: token.Span{Start: runeStart, End: l.pos},
+				Message:    "newline in string literal",
 			}
 		default:
 			b.WriteRune(br.r)
@@ -57,16 +59,16 @@ func (l *Lexer) lexString() (Token, error) {
 	}
 }
 
-func (l *Lexer) lexRune() (Token, error) {
+func (l *Lexer) lexRune() (token.Token, error) {
 	start := l.pos
 
 	br, err := l.advance()
 	if err != nil {
-		return Token{}, err
+		return token.Token{}, err
 	}
 
 	if br.r != '\'' {
-		return unexpectedToken(start, start), nil
+		return token.unexpectedToken(start, start), nil
 	}
 
 	runeStart := l.pos
@@ -74,31 +76,31 @@ func (l *Lexer) lexRune() (Token, error) {
 	br, err = l.advance()
 	if err != nil {
 		if errors.Is(err, io.EOF) {
-			return Token{}, &Error{
-				Span:    Span{Start: start, End: l.pos},
-				Message: "unterminated rune literal",
+			return token.Token{}, &Error{
+				token.Span: token.Span{Start: start, End: l.pos},
+				Message:    "unterminated rune literal",
 			}
 		}
-		return Token{}, err
+		return token.Token{}, err
 	}
 
 	var r rune
 
 	switch br.r {
 	case '\'':
-		return Token{}, &Error{
-			Span:    Span{Start: start, End: l.pos},
-			Message: "empty rune literal",
+		return token.Token{}, &Error{
+			token.Span: token.Span{Start: start, End: l.pos},
+			Message:    "empty rune literal",
 		}
 	case '\\':
 		r, err = l.readEscape(runeStart, '\'')
 		if err != nil {
-			return Token{}, err
+			return token.Token{}, err
 		}
 	case '\n', '\r':
-		return Token{}, &Error{
-			Span:    Span{Start: runeStart, End: l.pos},
-			Message: "newline in rune literal",
+		return token.Token{}, &Error{
+			token.Span: token.Span{Start: runeStart, End: l.pos},
+			Message:    "newline in rune literal",
 		}
 	default:
 		r = br.r
@@ -107,31 +109,31 @@ func (l *Lexer) lexRune() (Token, error) {
 	br, err = l.advance()
 	if err != nil {
 		if errors.Is(err, io.EOF) {
-			return Token{}, &Error{
-				Span:    Span{Start: start, End: l.pos},
-				Message: "unterminated rune literal",
+			return token.Token{}, &Error{
+				token.Span: token.Span{Start: start, End: l.pos},
+				Message:    "unterminated rune literal",
 			}
 		}
-		return Token{}, err
+		return token.Token{}, err
 	}
 
 	if br.r != '\'' {
-		return Token{}, &Error{
-			Span:    Span{Start: start, End: l.pos},
-			Message: "rune literal must contain exactly one rune",
+		return token.Token{}, &Error{
+			token.Span: token.Span{Start: start, End: l.pos},
+			Message:    "rune literal must contain exactly one rune",
 		}
 	}
 
-	return newToken(TOKEN_VALUE_RUNE, string(r), start, l.pos), nil
+	return token.newToken(token.TOKEN_VALUE_RUNE, string(r), start, l.pos), nil
 }
 
-func (l *Lexer) readEscape(start FilePos, delimiter rune) (rune, error) {
+func (l *Lexer) readEscape(start token.FilePos, delimiter rune) (rune, error) {
 	br, err := l.advance()
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			return 0, &Error{
-				Span:    Span{Start: start, End: l.pos},
-				Message: "unterminated escape sequence",
+				token.Span: token.Span{Start: start, End: l.pos},
+				Message:    "unterminated escape sequence",
 			}
 		}
 		return 0, err
@@ -151,8 +153,8 @@ func (l *Lexer) readEscape(start FilePos, delimiter rune) (rune, error) {
 	case '"', '\'':
 		if br.r != delimiter {
 			return 0, &Error{
-				Span:    Span{Start: start, End: l.pos},
-				Message: fmt.Sprintf("escape sequence \\%c is not valid in %s literal", br.r, literalKindName(delimiter)),
+				token.Span: token.Span{Start: start, End: l.pos},
+				Message:    fmt.Sprintf("escape sequence \\%c is not valid in %s literal", br.r, literalKindName(delimiter)),
 			}
 		}
 
@@ -161,13 +163,13 @@ func (l *Lexer) readEscape(start FilePos, delimiter rune) (rune, error) {
 		return '\x00', nil
 	case '\n', '\r':
 		return 0, &Error{
-			Span:    Span{Start: start, End: l.pos},
-			Message: "newline in escape sequence",
+			token.Span: token.Span{Start: start, End: l.pos},
+			Message:    "newline in escape sequence",
 		}
 	default:
 		return 0, &Error{
-			Span:    Span{Start: start, End: l.pos},
-			Message: fmt.Sprintf("unknown escape sequence \\%c", br.r),
+			token.Span: token.Span{Start: start, End: l.pos},
+			Message:    fmt.Sprintf("unknown escape sequence \\%c", br.r),
 		}
 	}
 }

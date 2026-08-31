@@ -5,18 +5,20 @@ import (
 	"errors"
 	"fmt"
 	"io"
+
+	"github.com/mcmelontv/chorus/internal/token"
 )
 
 type Lexer struct {
 	reader *bufio.Reader
 	buffer []bufferedRune
-	pos    FilePos
+	pos    token.FilePos
 }
 
 func New(reader io.Reader) *Lexer {
 	return &Lexer{
 		reader: bufio.NewReader(reader),
-		pos: FilePos{
+		pos: token.FilePos{
 			Offset: 0,
 			Line:   1,
 			Column: 1,
@@ -24,12 +26,12 @@ func New(reader io.Reader) *Lexer {
 	}
 }
 
-func Lex(reader io.Reader) ([]Token, error) {
+func Lex(reader io.Reader) ([]token.Token, error) {
 	return New(reader).Lex()
 }
 
-func (l *Lexer) Lex() ([]Token, error) {
-	var tokens []Token
+func (l *Lexer) Lex() ([]token.Token, error) {
+	var tokens []token.Token
 
 	for {
 		token, err := l.Next()
@@ -39,22 +41,22 @@ func (l *Lexer) Lex() ([]Token, error) {
 
 		tokens = append(tokens, token)
 
-		if token.Kind == TOKEN_EOF {
+		if token.Kind == token.TOKEN_EOF {
 			return tokens, nil
 		}
 	}
 }
 
-func (l *Lexer) Next() (Token, error) {
+func (l *Lexer) Next() (token.Token, error) {
 	for {
 		whitespace, err := l.consumeWhitespace()
 		if err != nil {
-			return Token{}, err
+			return token.Token{}, err
 		}
 
 		comment, err := l.consumeComment()
 		if err != nil {
-			return Token{}, err
+			return token.Token{}, err
 		}
 
 		if !whitespace && !comment {
@@ -64,12 +66,12 @@ func (l *Lexer) Next() (Token, error) {
 
 	lk, err := l.classifyNext()
 	if err != nil {
-		return Token{}, err
+		return token.Token{}, err
 	}
 
 	switch lk {
 	case lexKindEOF:
-		return eofToken(l.pos), nil
+		return token.eofToken(l.pos), nil
 	case lexKindIdentifier:
 		return l.lexIdentifier()
 	case lexKindNumeric:
@@ -85,12 +87,12 @@ func (l *Lexer) Next() (Token, error) {
 
 		br, err := l.advance()
 		if err != nil {
-			return Token{}, err
+			return token.Token{}, err
 		}
 
-		return Token{}, &Error{
-			Span:    Span{Start: start, End: l.pos},
-			Message: fmt.Sprintf("unexpected character %q", br.r),
+		return token.Token{}, &Error{
+			token.Span: token.Span{Start: start, End: l.pos},
+			Message:    fmt.Sprintf("unexpected character %q", br.r),
 		}
 	}
 }

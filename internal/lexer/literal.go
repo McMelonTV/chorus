@@ -3,21 +3,23 @@ package lexer
 import (
 	"errors"
 	"io"
+
+	"github.com/mcmelontv/chorus/internal/token"
 )
 
 func isLiteralTokenStart(r rune) bool {
-	_, ok := literalRoot.children[r]
+	_, ok := token.literalRoot.children[r]
 	return ok
 }
 
-func (l *Lexer) lexLiteral() (Token, error) {
+func (l *Lexer) lexLiteral() (token.Token, error) {
 	start := l.pos
 
-	node := literalRoot
+	node := token.literalRoot
 
 	traversed := 0
 	matchedRunes := 0
-	var matchedKind TokenKind
+	var matchedKind token.TokenKind
 
 	for depth := 0; ; depth++ {
 		br, err := l.peekSkip(depth)
@@ -25,7 +27,7 @@ func (l *Lexer) lexLiteral() (Token, error) {
 			if errors.Is(err, io.EOF) {
 				break
 			}
-			return Token{}, err
+			return token.Token{}, err
 		}
 
 		next := node.children[br.r]
@@ -44,17 +46,17 @@ func (l *Lexer) lexLiteral() (Token, error) {
 
 	if matchedRunes == 0 {
 		if err := l.advanceN(traversed); err != nil {
-			return Token{}, err
+			return token.Token{}, err
 		}
-		return Token{}, &Error{
-			Span:    Span{Start: start, End: l.pos},
-			Message: "invalid token",
+		return token.Token{}, &Error{
+			token.Span: token.Span{Start: start, End: l.pos},
+			Message:    "invalid token",
 		}
 	}
 
 	if err := l.advanceN(matchedRunes); err != nil {
-		return Token{}, err
+		return token.Token{}, err
 	}
 
-	return newToken(matchedKind, "", start, l.pos), nil
+	return token.newToken(matchedKind, "", start, l.pos), nil
 }

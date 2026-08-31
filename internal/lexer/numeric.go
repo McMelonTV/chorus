@@ -3,32 +3,34 @@ package lexer
 import (
 	"errors"
 	"io"
+
+	"github.com/mcmelontv/chorus/internal/token"
 )
 
 func isDigit(r rune) bool {
 	return r >= '0' && r <= '9'
 }
 
-func (l *Lexer) lexNumeric() (Token, error) {
+func (l *Lexer) lexNumeric() (token.Token, error) {
 	start := l.pos
 
 	var runes []rune
 
 	left, err := l.readWhile(isDigit)
 	if err != nil {
-		return Token{}, err
+		return token.Token{}, err
 	}
 	runes = append(runes, left...)
 
 	decimalPoint, err := l.readNumericDecimalPoint()
 	if err != nil {
-		return Token{}, err
+		return token.Token{}, err
 	}
 
 	if decimalPoint != nil {
 		right, err := l.readWhile(isDigit)
 		if err != nil {
-			return Token{}, err
+			return token.Token{}, err
 		}
 
 		runes = append(runes, *decimalPoint)
@@ -37,11 +39,11 @@ func (l *Lexer) lexNumeric() (Token, error) {
 
 	exponent, err := l.readNumericExponent()
 	if err != nil {
-		return Token{}, err
+		return token.Token{}, err
 	}
 	runes = append(runes, exponent...)
 
-	return newToken(TOKEN_VALUE_NUMERIC, string(runes), start, l.pos), nil
+	return token.newToken(token.TOKEN_VALUE_NUMERIC, string(runes), start, l.pos), nil
 }
 
 func (l *Lexer) readNumericDecimalPoint() (*rune, error) {
