@@ -85,6 +85,35 @@ type FilePos struct {
 	Offset, Line, Column uint32
 }
 
+func (f *File) FilePos(pos Pos) (FilePos, bool) {
+	if pos < f.Base || pos > f.End() {
+		return FilePos{}, false
+	}
+
+	offset := f.Offset(pos)
+
+	lo, hi := 0, len(f.lines)
+	for lo+1 < hi {
+		mid := lo + (hi-lo)/2
+
+		if f.lines[mid] <= offset {
+			lo = mid
+		} else {
+			hi = mid
+		}
+	}
+
+	line := uint32(lo + 1)
+	column := offset - f.lines[lo] + 1
+
+	return FilePos{
+		FileName: f.Name,
+		Offset:   offset,
+		Line:     line,
+		Column:   column,
+	}, true
+}
+
 type Pos uint32
 
 const NoPos Pos = 0
