@@ -37,7 +37,7 @@ func (fs *FileSet) AddFile(name string, data []byte) (*File, bool) {
 		Data: data,
 		Base: fs.nextBase,
 
-		lines: []uint32{0}, // first (0-th in this array) line begins at index 0
+		lines: buildLines(data),
 	}
 
 	fs.files = append(fs.files, file)
@@ -46,6 +46,18 @@ func (fs *FileSet) AddFile(name string, data []byte) (*File, bool) {
 	fs.nextBase += Pos(len(data)) + 1
 
 	return file, true
+}
+
+func buildLines(data []byte) []uint32 {
+	lines := []uint32{0} // first (0-th in this array) line begins at index 0
+
+	for i, b := range data {
+		if b == '\n' {
+			lines = append(lines, uint32(i+1))
+		}
+	}
+
+	return lines
 }
 
 type File struct {
