@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mcmelontv/chorus/internal/lexer"
 	"github.com/mcmelontv/chorus/internal/source"
@@ -12,32 +13,56 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Printf("no path provided")
-		return
+		_, _ = fmt.Fprintf(os.Stderr, "no path provided\n")
+		os.Exit(1)
 	}
 
-	path := filepath.Clean(os.Args[1])
+	cwd, err := os.Getwd()
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "failed to get working directory: %s\n", err)
+		os.Exit(1)
+	}
+
+	path, err := filepath.Abs(os.Args[1])
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "failed to resolve path: %s\n", err)
+		os.Exit(1)
+	}
+
+	relative, err := filepath.Rel(cwd, path)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "failed to get relative path: %s\n", err)
+		os.Exit(1)
+	}
+
+	if relative == ".." ||
+		strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+		_, _ = fmt.Fprintf(os.Stderr, "file is outside project directory\n")
+		os.Exit(1)
+	}
+
+	name := filepath.ToSlash(relative)
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Printf("failed to open file: %s\n", err)
-		return
+		_, _ = fmt.Fprintf(os.Stderr, "failed to open file: %s\n", err)
+		os.Exit(1)
 	}
 
 	fs := source.NewFileSet()
 
-	file, ok := fs.AddFile(path, data)
+	file, ok := fs.AddFile(name, data)
 	if !ok {
-		fmt.Printf("failed to add file %s\n", path)
-		return
+		_, _ = fmt.Fprintf(os.Stderr, "failed to add file %s\n", name)
+		os.Exit(1)
 	}
 
 	l := lexer.New(file)
 	for {
 		t, err := l.Next()
 		if err != nil {
-			fmt.Printf("failed to lex next token: %s\n", err)
-			break
+			_, _ = fmt.Fprintf(os.Stderr, "failed to lex next token: %s\n", err)
+			os.Exit(1)
 		}
 
 		fmt.Print(t.String(), " ")

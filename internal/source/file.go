@@ -61,6 +61,7 @@ func buildLines(data []byte) []uint32 {
 }
 
 type File struct {
+	// Name identifies the source for diagnostics and lookup, it should not be interpreted as a filesystem path
 	Name string
 	Data []byte
 	Base Pos
