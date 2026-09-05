@@ -3,8 +3,6 @@ package lexer
 import (
 	"errors"
 	"io"
-
-	"github.com/mcmelontv/chorus/internal/token"
 )
 
 func isWhitespace(r rune) bool {
@@ -22,7 +20,7 @@ func (l *Lexer) consumeWhitespace() (bool, error) {
 }
 
 func (l *Lexer) consumeComment() (bool, error) {
-	start := l.pos
+	start := l.offset
 
 	p, err := l.peekN(2)
 	if err != nil {
@@ -65,13 +63,7 @@ func (l *Lexer) consumeComment() (bool, error) {
 			br, err := l.advance()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
-					return true, &Error{
-						Span: token.Span{
-							Start: start,
-							End:   l.pos,
-						},
-						Message: "unterminated block comment",
-					}
+					return true, l.errorEndCurrent(start, "unterminated block comment")
 				}
 				return true, err
 			}
@@ -83,13 +75,7 @@ func (l *Lexer) consumeComment() (bool, error) {
 			next, err := l.peek()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
-					return true, &Error{
-						Span: token.Span{
-							Start: start,
-							End:   l.pos,
-						},
-						Message: "unterminated block comment",
-					}
+					return true, l.errorEndCurrent(start, "unterminated block comment")
 				}
 				return true, err
 			}

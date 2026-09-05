@@ -2,6 +2,8 @@ package token
 
 import (
 	"fmt"
+
+	"github.com/mcmelontv/chorus/internal/source"
 )
 
 type literalNode struct {
@@ -54,52 +56,14 @@ func init() {
 	}
 }
 
-type FilePos struct {
-	Offset, Line, Column int
-}
-
-type Span struct {
-	Start, End FilePos
-}
-
 type Token struct {
 	Kind  TokenKind
 	Value string
-	Span  Span
+	Span  source.Span
 }
 
 func (t *Token) String() string {
 	return fmt.Sprintf("%s(%s)", t.Kind, t.Value)
-}
-
-func UnexpectedToken(start, end FilePos) Token {
-	return NewTokenWithoutValue(TOKEN_UNEXPECTED, start, end)
-}
-
-func EofToken(pos FilePos) Token {
-	return NewTokenWithoutValue(TOKEN_EOF, pos, pos)
-}
-
-func NewTokenWithoutValue(kind TokenKind, start, end FilePos) Token {
-	return Token{
-		Kind:  kind,
-		Value: "",
-		Span: Span{
-			Start: start,
-			End:   end,
-		},
-	}
-}
-
-func NewToken(kind TokenKind, value string, start, end FilePos) Token {
-	return Token{
-		Kind:  kind,
-		Value: value,
-		Span: Span{
-			Start: start,
-			End:   end,
-		},
-	}
 }
 
 type TokenKind int

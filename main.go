@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/mcmelontv/chorus/internal/lexer"
+	"github.com/mcmelontv/chorus/internal/source"
 	"github.com/mcmelontv/chorus/internal/token"
 )
 
@@ -15,18 +16,27 @@ func main() {
 		return
 	}
 
-	file, err := os.Open(filepath.Clean(os.Args[1]))
+	path := filepath.Clean(os.Args[1])
+
+	data, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Printf("failed to open file: %s", err)
+		fmt.Printf("failed to open file: %s\n", err)
 		return
 	}
-	defer file.Close()
+
+	fs := source.NewFileSet()
+
+	file, ok := fs.AddFile(path, data)
+	if !ok {
+		fmt.Printf("failed to add file %s\n", path)
+		return
+	}
 
 	l := lexer.New(file)
 	for {
 		t, err := l.Next()
 		if err != nil {
-			fmt.Printf("failed to lex next token: %s", err)
+			fmt.Printf("failed to lex next token: %s\n", err)
 			break
 		}
 

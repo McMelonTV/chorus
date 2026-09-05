@@ -1,6 +1,8 @@
 package lexer
 
-import "github.com/mcmelontv/chorus/internal/token"
+import (
+	"github.com/mcmelontv/chorus/internal/token"
+)
 
 func isIdentifierStart(r rune) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || r == '_'
@@ -29,7 +31,7 @@ func isValidIdentifier(runes []rune) bool {
 }
 
 func (l *Lexer) lexIdentifier() (token.Token, error) {
-	start := l.pos
+	start := l.offset
 
 	runes, err := l.readWhile(isIdentifierContinue)
 	if err != nil {
@@ -37,11 +39,8 @@ func (l *Lexer) lexIdentifier() (token.Token, error) {
 	}
 
 	if !isValidIdentifier(runes) {
-		return token.Token{}, &Error{
-			Span:    token.Span{Start: start, End: l.pos},
-			Message: "invalid identifier",
-		}
+		return token.Token{}, l.errorEndCurrent(start, "invalid identifier")
 	}
 
-	return token.NewToken(token.TOKEN_IDENTIFIER, string(runes), start, l.pos), nil
+	return l.token(token.TOKEN_IDENTIFIER, string(runes), start, l.offset)
 }

@@ -12,7 +12,7 @@ func isDigit(r rune) bool {
 }
 
 func (l *Lexer) lexNumeric() (token.Token, error) {
-	start := l.pos
+	start := l.offset
 
 	var runes []rune
 
@@ -43,7 +43,7 @@ func (l *Lexer) lexNumeric() (token.Token, error) {
 	}
 	runes = append(runes, exponent...)
 
-	return token.NewToken(token.TOKEN_VALUE_NUMERIC, string(runes), start, l.pos), nil
+	return l.tokenEndCurrent(token.TOKEN_VALUE_NUMERIC, string(runes), start)
 }
 
 func (l *Lexer) readNumericDecimalPoint() (*rune, error) {

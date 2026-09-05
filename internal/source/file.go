@@ -81,8 +81,10 @@ func (f *File) End() Pos {
 }
 
 type FilePos struct {
-	FileName             string
-	Offset, Line, Column uint32
+	FileName string
+	Offset   uint32 // zero-based byte offset
+	Line     uint32 // one-based line number
+	Column   uint32 // one-based byte column
 }
 
 func (f *File) FilePos(pos Pos) (FilePos, bool) {

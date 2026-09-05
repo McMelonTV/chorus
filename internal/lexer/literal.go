@@ -13,7 +13,7 @@ func isLiteralTokenStart(r rune) bool {
 }
 
 func (l *Lexer) lexLiteral() (token.Token, error) {
-	start := l.pos
+	start := l.offset
 
 	node := token.LiteralRoot
 
@@ -48,15 +48,12 @@ func (l *Lexer) lexLiteral() (token.Token, error) {
 		if err := l.advanceN(traversed); err != nil {
 			return token.Token{}, err
 		}
-		return token.Token{}, &Error{
-			Span:    token.Span{Start: start, End: l.pos},
-			Message: "invalid token",
-		}
+		return token.Token{}, l.errorEndCurrent(start, "invalid token")
 	}
 
 	if err := l.advanceN(matchedRunes); err != nil {
 		return token.Token{}, err
 	}
 
-	return token.NewToken(matchedKind, "", start, l.pos), nil
+	return l.tokenEmptyValueEndCurrent(matchedKind, start)
 }

@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"unicode/utf8"
 )
 
-type bufferedRune struct {
+type decodedRune struct {
 	r    rune
 	size int
 }
@@ -62,26 +63,13 @@ func (l *Lexer) readWhile(predicate func(rune) bool) ([]rune, error) {
 	}
 }
 
-func (l *Lexer) advance() (bufferedRune, error) {
-	var br bufferedRune
-
-	if len(l.buffer) > 0 {
-		br = l.buffer[0]
-		l.buffer = l.buffer[1:]
-	} else {
-		r, size, err := l.reader.ReadRune()
-		if err != nil {
-			return bufferedRune{}, err
-		}
-
-		br = bufferedRune{
-			r:    r,
-			size: size,
-		}
+func (l *Lexer) advance() (decodedRune, error) {
+	br, err := l.peek()
+	if err != nil {
+		return decodedRune{}, err
 	}
 
-	l.advancePosition(br)
-
+	l.offset += uint32(br.size)
 	return br, nil
 }
 
@@ -95,56 +83,46 @@ func (l *Lexer) advanceN(n int) error {
 	return nil
 }
 
-func (l *Lexer) advancePosition(br bufferedRune) {
-	l.pos.Offset += br.size
-
-	if br.r == '\n' {
-		l.pos.Line++
-		l.pos.Column = 1
-	} else {
-		l.pos.Column++
-	}
-}
-
-func (l *Lexer) peek() (bufferedRune, error) {
-	runes, err := l.peekN(1)
-	if err != nil {
-		return bufferedRune{}, err
+func (l *Lexer) peek() (decodedRune, error) {
+	if uint64(l.offset) >= uint64(len(l.file.Data)) {
+		return decodedRune{}, io.EOF
 	}
 
-	return runes[0], nil
+	r, size := utf8.DecodeRune(l.file.Data[l.offset:])
+	return decodedRune{r: r, size: size}, nil
 }
 
-func (l *Lexer) peekN(n int) ([]bufferedRune, error) {
+func (l *Lexer) peekN(n int) ([]decodedRune, error) {
 	if n < 0 {
 		return nil, fmt.Errorf("peekN: negative count %d", n)
 	}
 
-	for len(l.buffer) < n {
-		r, size, err := l.reader.ReadRune()
-		if err != nil {
-			return nil, err
+	offset := l.offset
+	runes := make([]decodedRune, 0, n)
+
+	for range n {
+		if uint64(offset) >= uint64(len(l.file.Data)) {
+			return nil, io.EOF
 		}
 
-		l.buffer = append(l.buffer, bufferedRune{
-			r:    r,
-			size: size,
-		})
+		r, size := utf8.DecodeRune(l.file.Data[offset:])
+		runes = append(runes, decodedRune{r: r, size: size})
+		offset += uint32(size)
 	}
 
-	return l.buffer[:n], nil
+	return runes, nil
 }
 
-func (l *Lexer) peekSkip(skip int) (bufferedRune, error) {
+func (l *Lexer) peekSkip(skip int) (decodedRune, error) {
 	runes, err := l.peekNSkip(1, skip)
 	if err != nil {
-		return bufferedRune{}, err
+		return decodedRune{}, err
 	}
 
 	return runes[0], nil
 }
 
-func (l *Lexer) peekNSkip(n, skipCount int) ([]bufferedRune, error) {
+func (l *Lexer) peekNSkip(n, skipCount int) ([]decodedRune, error) {
 	if n < 0 {
 		return nil, fmt.Errorf("peekNSkip: negative count %d", n)
 	}

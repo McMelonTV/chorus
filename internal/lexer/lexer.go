@@ -1,33 +1,28 @@
 package lexer
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"io"
 
+	"github.com/mcmelontv/chorus/internal/source"
 	"github.com/mcmelontv/chorus/internal/token"
 )
 
 type Lexer struct {
-	reader *bufio.Reader
-	buffer []bufferedRune
-	pos    token.FilePos
+	file   *source.File
+	offset uint32
 }
 
-func New(reader io.Reader) *Lexer {
+func New(f *source.File) *Lexer {
 	return &Lexer{
-		reader: bufio.NewReader(reader),
-		pos: token.FilePos{
-			Offset: 0,
-			Line:   1,
-			Column: 1,
-		},
+		file:   f,
+		offset: 0,
 	}
 }
 
-func Lex(reader io.Reader) ([]token.Token, error) {
-	return New(reader).Lex()
+func Lex(f *source.File) ([]token.Token, error) {
+	return New(f).Lex()
 }
 
 func (l *Lexer) Lex() ([]token.Token, error) {
@@ -71,7 +66,7 @@ func (l *Lexer) Next() (token.Token, error) {
 
 	switch lk {
 	case lexKindEOF:
-		return token.EofToken(l.pos), nil
+		return l.tokenEOF()
 	case lexKindIdentifier:
 		return l.lexIdentifier()
 	case lexKindNumeric:
@@ -83,17 +78,14 @@ func (l *Lexer) Next() (token.Token, error) {
 	case lexKindLiteral:
 		return l.lexLiteral()
 	default:
-		start := l.pos
+		start := l.offset
 
 		br, err := l.advance()
 		if err != nil {
 			return token.Token{}, err
 		}
 
-		return token.Token{}, &Error{
-			Span:    token.Span{Start: start, End: l.pos},
-			Message: fmt.Sprintf("unexpected character %q", br.r),
-		}
+		return token.Token{}, l.error(start, l.offset, fmt.Sprintf("unexpected character %q", br.r))
 	}
 }
 
@@ -142,4 +134,67 @@ func (l *Lexer) classifyNext() (lexKind, error) {
 	}
 
 	return lexKindUnexpected, err
+}
+
+func (l *Lexer) span(start, end uint32) (source.Span, bool) {
+	return source.NewSpan(l.file.Pos(start), l.file.Pos(end))
+}
+
+func (l *Lexer) currentFilePos() (source.FilePos, bool) {
+	return l.file.FilePos(l.currentPos())
+}
+
+func (l *Lexer) currentPos() source.Pos {
+	return l.file.Pos(l.offset)
+}
+
+func (l *Lexer) error(start, end uint32, message string) error {
+	span, ok := l.span(start, end)
+
+	if !ok {
+		span = source.Span{}
+	}
+
+	return &Error{
+		File:    l.file,
+		Span:    span,
+		Message: message,
+	}
+}
+
+func (l *Lexer) errorEndCurrent(start uint32, message string) error {
+	return l.error(start, l.offset, message)
+}
+
+func (l *Lexer) token(kind token.TokenKind, value string, start, end uint32) (token.Token, error) {
+	span, ok := l.span(start, end)
+	if !ok {
+		return token.Token{}, fmt.Errorf("lexer/Lexer.token(): invalid span")
+	}
+
+	return token.Token{
+		Kind:  kind,
+		Value: value,
+		Span:  span,
+	}, nil
+}
+
+func (l *Lexer) tokenEmptyValue(kind token.TokenKind, start, end uint32) (token.Token, error) {
+	return l.token(kind, "", start, end)
+}
+
+func (l *Lexer) tokenEndCurrent(kind token.TokenKind, value string, start uint32) (token.Token, error) {
+	return l.token(kind, value, start, l.offset)
+}
+
+func (l *Lexer) tokenEmptyValueEndCurrent(kind token.TokenKind, start uint32) (token.Token, error) {
+	return l.token(kind, "", start, l.offset)
+}
+
+func (l *Lexer) tokenEOF() (token.Token, error) {
+	return l.token(token.TOKEN_EOF, "", l.offset, l.offset)
+}
+
+func (l *Lexer) tokenUnexpected(offset uint32) (token.Token, error) {
+	return l.token(token.TOKEN_UNEXPECTED, "", offset, offset)
 }
