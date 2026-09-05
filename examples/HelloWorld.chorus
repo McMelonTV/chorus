@@ -1,0 +1,5 @@
+class HelloWorld satisfies Program {
+    void main() {
+        print("hello world");
+    }
+}
